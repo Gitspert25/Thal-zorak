@@ -3,473 +3,691 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thal’zorak: The 3 AM Demon Escape</title>
+  <title>Thal'kazor - Survival</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+    /* Basic reset */
     body {
-      background: radial-gradient(circle at center, #1a0000 0%, #330000 70%, #000 100%);
-      color: #f2f2f2;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      margin: 0; background: #0a0a0a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+      overflow: hidden;
     }
-    #gameArea {
-      background: rgba(0, 0, 0, 0.85);
-      border: 2px solid #550000;
-      border-radius: 15px;
-      width: 600px;
-      max-width: 95vw;
-      min-height: 500px;
-      padding: 25px;
-      box-shadow: 0 0 35px #b30000;
-      position: relative;
-      overflow-y: auto;
+    #gameContainer {
+      max-width: 800px; margin: 0 auto; padding: 10px;
     }
     h1 {
-      font-family: 'Creepster', cursive;
-      font-size: 3rem;
-      color: #ff2111;
-      text-shadow: 0 0 10px #ff2111, 0 0 30px #b30000;
-      margin-bottom: 0.7rem;
-      user-select: none;
+      font-weight: 900; text-align: center; margin-bottom: 10px;
+      color: #e63946;
+      text-shadow: 0 0 10px #e63946;
     }
-    #dialogue p {
-      font-size: 1.1rem;
-      margin-bottom: 0.7rem;
-      text-shadow: 0 0 6px #bb0000;
+    #infoPanel {
+      display: flex; justify-content: space-between; margin-bottom: 5px;
+      font-size: 18px;
     }
-    button {
-      margin: 8px 8px 8px 0;
-      box-shadow: 0 0 8px #b30000;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.3s ease;
-      font-weight: 600;
+    #gameCanvas {
+      background: #111;
+      display: block;
+      margin: 0 auto;
+      border: 3px solid #e63946;
+      border-radius: 12px;
+      box-shadow: 0 0 30px #e63946;
     }
-    button:hover {
-      background-color: #770000 !important;
-      box-shadow: 0 0 18px #ff3300;
-    }
-    .btn-outline-danger {
-      border-color: #aa0000;
-      color: #ff4444;
-    }
-    .btn-outline-danger:hover {
-      background-color: #aa0000;
-      color: #fff;
-      box-shadow: 0 0 15px #ff5555;
-    }
-    input.form-control {
-      max-width: 350px;
-      margin: 10px auto 20px auto;
-      background: #330000;
-      border: 1px solid #660000;
-      color: #f2f2f2;
-      text-shadow: none;
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-    input::placeholder {
-      color: #bb4444;
-    }
-    #toolsArea button {
-      min-width: 130px;
-    }
-    #overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+    #gameOverScreen {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.9);
-      color: #ff1111;
-      font-size: 2rem;
+      color: #e63946;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
       text-align: center;
-      z-index: 1000;
-      user-select: none;
+      z-index: 99;
+      visibility: hidden;
       opacity: 0;
-      pointer-events: none;
-      transition: opacity 1s ease;
-      padding: 20px;
-      box-sizing: border-box;
+      transition: visibility 0s linear 0.3s, opacity 0.3s ease-in-out;
     }
-    #overlay.show {
+    #gameOverScreen.visible {
+      visibility: visible;
       opacity: 1;
-      pointer-events: all;
+      transition-delay: 0s;
+    }
+    button.btn-restart {
+      background: #e63946;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      margin-top: 20px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #e63946;
+      transition: background 0.3s ease-in-out;
+    }
+    button.btn-restart:hover {
+      background: #a62830;
+    }
+    /* Health bar */
+    #healthBarContainer {
+      background: #222;
+      border: 2px solid #e63946;
+      border-radius: 8px;
+      width: 160px;
+      height: 22px;
+      overflow: hidden;
+      box-shadow: 0 0 10px #e63946 inset;
+    }
+    #healthBar {
+      background: #e63946;
+      height: 100%;
+      width: 100%;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 7px #e63946;
+    }
+    /* Tooltip for controls and info */
+    #controlsInfo {
+      font-size: 14px;
+      color: #ccc;
+      text-align: center;
+      margin-top: 8px;
+      user-select: none;
+    }
+    /* Barricade style */
+    .barricade {
+      background: #7b2ff7;
+      border-radius: 4px;
+      box-shadow: 0 0 10px #7b2ff7 inset;
+    }
+    /* Orb (resource) style */
+    .orb {
+      background: #fcdc4d;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #fcdc4d;
+    }
+    /* Bullet style */
+    .bullet {
+      background: #00e5ff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #00e5ff;
     }
   </style>
 </head>
 <body>
-  <div id="gameArea" aria-live="polite" aria-atomic="true">
-    <h1>Thal’zorak: The 3 AM Demon Escape</h1>
-    <p>Welcome, mortal. What is your name?</p>
-    <input type="text" id="playerNameInput" placeholder="Enter your name here..." autofocus autocomplete="off" />
-    <br />
-    <button id="startBtn" class="btn btn-danger btn-lg">Summon Thal’zorak</button>
-  </div>
 
-  <div id="overlay"></div>
+<div id="gameContainer">
+  <h1>Thal'kazor - Survival</h1>
+  <div id="infoPanel">
+    <div id="healthBarContainer" title="Health">
+      <div id="healthBar"></div>
+    </div>
+    <div>Score: <span id="score">0</span></div>
+    <div>Wave: <span id="wave">1</span></div>
+    <div>Orbs: <span id="orbsCount">0</span></div>
+  </div>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <div id="controlsInfo">
+    Controls: Arrow keys to move | Space to shoot | B to build barricade (cost: 3 orbs)
+  </div>
+</div>
+
+<div id="gameOverScreen">
+  <div>Game Over<br />You survived <span id="finalScore">0</span> points!</div>
+  <button class="btn-restart">Restart</button>
+</div>
 
 <script>
-  /* Game variables */
-  const demonName = "Thal’zorak";
-  const tools = ['Holy Water', 'Magic Salt', 'Ancient Amulet'];
-  let playerName = "";
-  let stage = 'start';
-  let usedTools = new Set();
+(() => {
+  // Setup canvas
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
 
-  const gameArea = document.getElementById('gameArea');
-  const startBtn = document.getElementById('startBtn');
-  const playerNameInput = document.getElementById('playerNameInput');
-  const overlay = document.getElementById('overlay');
+  // UI elements
+  const healthBar = document.getElementById('healthBar');
+  const scoreEl = document.getElementById('score');
+  const waveEl = document.getElementById('wave');
+  const orbsCountEl = document.getElementById('orbsCount');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const btnRestart = document.querySelector('.btn-restart');
 
-  /* Web Audio API Ambient & Effects Setup */
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  let audioCtx, ambientGain, whiteNoiseNode, oscillators = [], ambientPlaying = false;
+  // Game Constants
+  const PLAYER_SIZE = 25;
+  const PLAYER_SPEED = 4;
+  const PLAYER_MAX_HEALTH = 100;
+  const DEMON_SIZE = 30;
+  const DEMON_BASE_SPEED = 1.2;
+  const ORB_SIZE = 15;
+  const BULLET_SIZE = 8;
+  const BULLET_SPEED = 7;
+  const BARRICADE_SIZE = 60;
+  const ORB_COST = 3;
 
-  function playAmbient() {
-    if (ambientPlaying) return;
-    audioCtx = new AudioContext();
+  // Entities Arrays
+  let demons = [];
+  let orbs = [];
+  let bullets = [];
+  let barricades = [];
 
-    // Ambient dark drone
-    const oscillator = audioCtx.createOscillator();
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(55, audioCtx.currentTime); // deep base tone
+  // Game state
+  let keys = {};
+  let player = {
+    x: canvas.width/2 - PLAYER_SIZE/2,
+    y: canvas.height - PLAYER_SIZE - 10,
+    size: PLAYER_SIZE,
+    speed: PLAYER_SPEED,
+    health: PLAYER_MAX_HEALTH,
+    alive: true
+  };
+  let score = 0;
+  let wave = 1;
+  let orbsCount = 0;
+  let demonSpawnInterval;
+  let demonSpawnTimer = 0;
+  let demonSpawnDelay = 1500; // ms
+  let lastTimestamp = 0;
+
+  // Audio context and buffers
+  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let sounds = {};
+
+  // Load and create sounds functions
+  function playGrowl() {
+    // demon growl - low distorted oscillator
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-    oscillator.connect(gain);
+
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+
+    osc.connect(gain);
     gain.connect(audioCtx.destination);
-    oscillator.start();
-    oscillators.push({ oscillator, gain });
 
-    // Low frequency modulator for eerie pulsing
-    const lfo = audioCtx.createOscillator();
-    lfo.frequency.setValueAtTime(0.2, audioCtx.currentTime);
-    const lfoGain = audioCtx.createGain();
-    lfoGain.gain.setValueAtTime(10, audioCtx.currentTime);
-    lfo.connect(lfoGain);
-    lfoGain.connect(oscillator.frequency);
-    lfo.start();
-    oscillators.push({ oscillator: lfo, gain: lfoGain });
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+  }
 
-    // White Noise (hissing creepy background)
-    whiteNoiseNode = audioCtx.createBufferSource();
-    const bufferSize = audioCtx.sampleRate * 2;
+  function playShoot() {
+    // quick high-pitch blip for shooting
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    const gain = audioCtx.createGain();
+
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+  }
+
+  function playHit() {
+    // hit sound for demons hurt - short white noise burst
+    const bufferSize = audioCtx.sampleRate * 0.1; // 0.1s
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
+    for (let i=0; i<bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1)*Math.exp(-i/bufferSize*10);
     }
-    whiteNoiseNode.buffer = buffer;
-    whiteNoiseNode.loop = true;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
 
-    const whiteNoiseGain = audioCtx.createGain();
-    whiteNoiseGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-    whiteNoiseNode.connect(whiteNoiseGain);
-    whiteNoiseGain.connect(audioCtx.destination);
-    whiteNoiseNode.start();
-
-    ambientGain = whiteNoiseGain;
-
-    ambientPlaying = true;
-  }
-
-  function stopAmbient() {
-    if (!ambientPlaying) return;
-    oscillators.forEach(({oscillator, gain}) => {
-      oscillator.stop();
-      oscillator.disconnect();
-      gain.disconnect();
-    });
-    oscillators = [];
-    if(whiteNoiseNode) {
-      whiteNoiseNode.stop();
-      whiteNoiseNode.disconnect();
-    }
-    if(audioCtx) {
-      audioCtx.close();
-    }
-    ambientPlaying = false;
-  }
-
-  /* SFX for button clicks and effects */
-  function playClickSound(){
-    if(!audioCtx){
-      audioCtx = new AudioContext();
-    }
-    const clickFreq = 500;
-    const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(clickFreq, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    osc.connect(gainNode);
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    noise.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.05);
+
+    noise.start(audioCtx.currentTime);
+    noise.stop(audioCtx.currentTime + 0.1);
   }
 
-  function playToolUseSound(){
-    if(!audioCtx){
-      audioCtx = new AudioContext();
-    }
+  function playBuild() {
+    // twinkly sound for building barricades
     const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(900, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    const gain = audioCtx.createGain();
+
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
+    osc.stop(audioCtx.currentTime + 0.2);
   }
 
-  /* Utility: show overlay with message (creepy) */
-  function showOverlay(text, duration=4000){
-    overlay.textContent = text;
-    overlay.classList.add('show');
-    setTimeout(() => {
-      overlay.classList.remove('show');
-    }, duration);
-  }
+  // Background ambient music (looping eerie sound)
+  // For simplicity, just low bass drone with occasional pulse
+  let bgOsc1, bgOsc2, bgGain;
 
-  /* Utility: scroll gameArea down smoothly */
-  function scrollGameToBottom(){
-    setTimeout(() => {
-      gameArea.scrollTo({ top: gameArea.scrollHeight, behavior: 'smooth' });
-    }, 100);
-  }
+  function startBackgroundMusic() {
+    bgOsc1 = audioCtx.createOscillator();
+    bgOsc2 = audioCtx.createOscillator();
 
-  /* Game logic & flow */
+    const gain1 = audioCtx.createGain();
+    const gain2 = audioCtx.createGain();
 
-  // Start button handler
-  startBtn.addEventListener('click', () => {
-    if(stage !== 'start') return;
-    let inputName = playerNameInput.value.trim();
-    if(!inputName){
-      alert('Enter your name, mortal!');
-      playerNameInput.focus();
-      return;
+    bgGain = audioCtx.createGain();
+    bgGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+
+    bgOsc1.type = 'sine';
+    bgOsc1.frequency.setValueAtTime(40, audioCtx.currentTime);
+
+    bgOsc2.type = 'sine';
+    bgOsc2.frequency.setValueAtTime(45, audioCtx.currentTime);
+
+    bgOsc1.connect(gain1);
+    bgOsc2.connect(gain2);
+
+    gain1.connect(bgGain);
+    gain2.connect(bgGain);
+    bgGain.connect(audioCtx.destination);
+
+    gain1.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gain2.gain.setValueAtTime(0.5, audioCtx.currentTime);
+
+    bgOsc1.start();
+    bgOsc2.start();
+
+    // slight pulsing on gain
+    function pulse() {
+      bgGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      bgGain.gain.exponentialRampToValueAtTime(0.02, audioCtx.currentTime + 1.2);
+      setTimeout(pulse, 2000);
     }
-    playerName = inputName;
-    startGame();
+    pulse();
+  }
+
+
+  // Helper functions
+  function rectsCollide(a, b) {
+    return !(a.x + a.size < b.x ||
+             a.x > b.x + b.size ||
+             a.y + a.size < b.y ||
+             a.y > b.y + b.size);
+  }
+
+  function circlesCollide(a, b, radiiSum) {
+    const dx = (a.x + a.size/2) - (b.x + b.size/2);
+    const dy = (a.y + a.size/2) - (b.y + b.size/2);
+    return (dx*dx + dy*dy) < radiiSum*radiiSum;
+  }
+
+  // Spawning demons based on wave
+  function spawnDemon() {
+    // Random for demon spawn edge (top, left, right)
+    const edge = Math.floor(Math.random() * 3);
+    let x, y;
+    switch(edge) {
+      case 0: // top
+        x = Math.random() * (canvas.width - DEMON_SIZE);
+        y = -DEMON_SIZE;
+        break;
+      case 1: // left
+        x = -DEMON_SIZE;
+        y = Math.random() * (canvas.height - DEMON_SIZE);
+        break;
+      case 2: // right
+        x = canvas.width + DEMON_SIZE;
+        y = Math.random() * (canvas.height - DEMON_SIZE);
+        break;
+    }
+    demons.push({
+      x,
+      y,
+      size: DEMON_SIZE,
+      speed: DEMON_BASE_SPEED + 0.1 * wave,
+      health: 3 + Math.floor(wave/2),
+      alive: true,
+      name: "Thal'kazor"
+    });
+    playGrowl();
+  }
+
+  // Spawn orbs randomly on map
+  function spawnOrb() {
+    const x = Math.random() * (canvas.width - ORB_SIZE);
+    const y = Math.random() * (canvas.height - ORB_SIZE);
+    orbs.push({x,y, size: ORB_SIZE});
+  }
+
+  // Player shoot bullet
+  function shootBullet() {
+    if (!player.alive) return;
+    // Shoot up from center of player
+    bullets.push({
+      x: player.x + player.size/2 - BULLET_SIZE/2,
+      y: player.y - BULLET_SIZE,
+      size: BULLET_SIZE,
+      speed: BULLET_SPEED,
+      alive: true
+    });
+    playShoot();
+  }
+
+  // Build barricade - costs orbsCount >= ORB_COST
+  function buildBarricade() {
+    if(!player.alive) return;
+    if (orbsCount < ORB_COST) return;
+    // Place barricade in front of player depending on last movement or facing
+    let barricadeX = player.x + player.size/2 - BARRICADE_SIZE/2;
+    let barricadeY = player.y - BARRICADE_SIZE - 5;
+    if (barricadeY < 0) barricadeY = player.y + player.size + 5; // if near top, put below
+
+    // Check not overlapping existing barricades
+    let canPlace = !barricades.some(b => Math.abs(b.x - barricadeX) < BARRICADE_SIZE && Math.abs(b.y - barricadeY) < BARRICADE_SIZE);
+    if (!canPlace) return;
+
+    barricades.push({x:barricadeX, y:barricadeY, size: BARRICADE_SIZE});
+    orbsCount -= ORB_COST;
+    playBuild();
+  }
+
+  // Player move with arrow keys, limit inside canvas
+  function movePlayer() {
+    if (!player.alive) return;
+    if (keys['ArrowUp']) player.y -= player.speed;
+    if (keys['ArrowDown']) player.y += player.speed;
+    if (keys['ArrowLeft']) player.x -= player.speed;
+    if (keys['ArrowRight']) player.x += player.speed;
+
+    player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+  }
+
+  // Move demons toward player, avoid barricades
+  function moveDemons() {
+    demons.forEach(d => {
+      if (!d.alive) return;
+      let dx = (player.x + player.size/2) - (d.x + d.size/2);
+      let dy = (player.y + player.size/2) - (d.y + d.size/2);
+      let dist = Math.sqrt(dx*dx + dy*dy);
+
+      // Simple push away from barricades
+      barricades.forEach(b => {
+        if (rectsCollide(d, b)) {
+          // Push demon away from barricade center
+          let bx = b.x + b.size / 2;
+          let by = b.y + b.size / 2;
+          let pushX = d.x + d.size/2 - bx;
+          let pushY = d.y + d.size/2 - by;
+          let pushDist = Math.sqrt(pushX*pushX + pushY*pushY) || 1;
+          d.x += (pushX / pushDist) * d.speed * 1.5;
+          d.y += (pushY / pushDist) * d.speed * 1.5;
+        }
+      });
+
+      if (dist > 0) {
+        // Normalize and move toward player
+        d.x += (dx / dist) * d.speed;
+        d.y += (dy / dist) * d.speed;
+      }
+
+      // Keep demons inside canvas (with some padding)
+      d.x = Math.max(-DEMON_SIZE*2, Math.min(canvas.width + DEMON_SIZE*2, d.x));
+      d.y = Math.max(-DEMON_SIZE*2, Math.min(canvas.height + DEMON_SIZE*2, d.y));
+    });
+  }
+
+  // Move bullets up
+  function moveBullets() {
+    bullets.forEach(b => {
+      if (!b.alive) return;
+      b.y -= b.speed;
+      if (b.y + b.size < 0) b.alive = false;
+    });
+  }
+
+  // Handle bullet hit demon
+  function checkBulletHits() {
+    bullets.forEach(b => {
+      if (!b.alive) return;
+      demons.forEach(d => {
+        if (d.alive && circlesCollide(b,d, b.size/2 + d.size/2)) {
+          d.health--;
+          b.alive = false;
+          playHit();
+          if (d.health <= 0) {
+            d.alive = false;
+            score += 10;
+            spawnOrb();
+          }
+        }
+      });
+    });
+  }
+
+  // Demons touching player
+  function checkDemonHits() {
+    demons.forEach(d => {
+      if (!d.alive) return;
+      if (rectsCollide(d, player)) {
+        player.health -= 10;
+        d.alive = false; // demon destroyed on hit
+        playHit();
+        if (player.health <= 0) {
+          player.alive = false;
+          showGameOver();
+        }
+      }
+    });
+  }
+
+  // Player collecting orbs (circle collision)
+  function checkOrbCollect() {
+    orbs.forEach((orb, idx) => {
+      if (circlesCollide(player, orb, player.size/2 + orb.size/2)) {
+        orbs.splice(idx, 1);
+        orbsCount++;
+      }
+    });
+  }
+
+  // Render functions
+  function drawPlayer() {
+    ctx.fillStyle = player.alive ? '#0ff' : '#555';
+    ctx.fillRect(player.x, player.y, player.size, player.size);
+
+    // Eyes for style
+    ctx.fillStyle = 'red';
+    ctx.fillRect(player.x + 5, player.y + 7, 5, 5);
+    ctx.fillRect(player.x + player.size - 10, player.y + 7, 5, 5);
+  }
+
+  function drawDemons() {
+    demons.forEach(d => {
+      if (!d.alive) return;
+      // Demon body - dark red with glowing effect
+      ctx.fillStyle = '#8b0000';
+      ctx.shadowColor = '#ff0000';
+      ctx.shadowBlur = 15;
+      ctx.fillRect(d.x, d.y, d.size, d.size);
+      ctx.shadowBlur = 0;
+
+      // Demon name "Thal'kazor" above
+      ctx.fillStyle = '#ff5555';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.name, d.x + d.size/2, d.y - 5);
+    });
+  }
+
+  function drawOrbs() {
+    orbs.forEach(orb => {
+      ctx.fillStyle = '#fcdc4d';
+      ctx.shadowColor = '#fcdc4d';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(orb.x + orb.size/2, orb.y + orb.size/2, orb.size/2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  function drawBullets() {
+    bullets.forEach(b => {
+      if (!b.alive) return;
+      ctx.fillStyle = '#00e5ff';
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 7;
+      ctx.beginPath();
+      ctx.arc(b.x + b.size/2, b.y + b.size/2, b.size/2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  function drawBarricades() {
+    barricades.forEach(b => {
+      ctx.fillStyle = '#7b2ff7';
+      ctx.shadowColor = '#7b2ff7';
+      ctx.shadowBlur = 10;
+      ctx.fillRect(b.x, b.y, b.size, b.size);
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  // Update UI
+  function updateUI() {
+    healthBar.style.width = Math.max(0, (player.health / PLAYER_MAX_HEALTH) * 100) + '%';
+    scoreEl.textContent = score;
+    waveEl.textContent = wave;
+    orbsCountEl.textContent = orbsCount;
+  }
+
+  // Game Over screen
+  function showGameOver() {
+    finalScoreEl.textContent = score;
+    gameOverScreen.classList.add('visible');
+  }
+  function hideGameOver() {
+    gameOverScreen.classList.remove('visible');
+  }
+
+  // Restart game
+  function restartGame() {
+    player = {
+      x: canvas.width/2 - PLAYER_SIZE/2,
+      y: canvas.height - PLAYER_SIZE - 10,
+      size: PLAYER_SIZE,
+      speed: PLAYER_SPEED,
+      health: PLAYER_MAX_HEALTH,
+      alive: true
+    };
+    demons = [];
+    orbs = [];
+    bullets = [];
+    barricades = [];
+    score = 0;
+    wave = 1;
+    orbsCount = 0;
+    demonSpawnTimer = 0;
+    hideGameOver();
+  }
+
+  // Spawn wave of demons
+  function spawnWave() {
+    const count = 3 + wave; // Increasing demon count each wave
+    for(let i=0; i<count; i++) {
+      spawnDemon();
+    }
+  }
+
+  // Main game loop
+  function gameLoop(timestamp=0) {
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    const delta = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (player.alive) {
+      movePlayer();
+      moveDemons();
+      moveBullets();
+
+      checkBulletHits();
+      checkDemonHits();
+      checkOrbCollect();
+
+      // Remove dead demons & bullets fast cleanup
+      demons = demons.filter(d => d.alive);
+      bullets = bullets.filter(b => b.alive);
+
+      // Spawn demons with delay per wave
+      demonSpawnTimer += delta;
+      if (demonSpawnTimer > demonSpawnDelay) {
+        if (demons.length < 3 + wave) {
+          spawnDemon();
+        } else if (demons.length === 0) {
+          // Wave cleared -> next wave after short delay
+          wave++;
+          demonSpawnDelay = Math.max(600, demonSpawnDelay - 50); // speed up spawn delay
+          spawnWave();
+          // Spawn some new orbs as bonus
+          for(let i=0; i<3; i++) spawnOrb();
+        }
+        demonSpawnTimer = 0;
+      }
+    }
+
+    drawBarricades();
+    drawOrbs();
+    drawPlayer();
+    drawDemons();
+    drawBullets();
+
+    updateUI();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Event listeners
+  window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    // Shoot bullets with Space
+    if (e.key === ' ') {
+      shootBullet();
+      e.preventDefault();
+    }
+    // Build barricade with 'b' or 'B'
+    if (e.key === 'b' || e.key === 'B') {
+      buildBarricade();
+    }
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key] = false;
   });
 
-  // Start the game after name is entered
-  function startGame(){
-    stage = 'summon';
-    gameArea.innerHTML = `
-      <h1>Thal’zorak: The 3 AM Demon Escape</h1>
-      <div id="dialogue">
-        <p>The clock strikes <strong>3:00 AM</strong>. The room chills as <strong>${playerName}</strong> prepares the ancient summoning circle.</p>
-        <p>You open the dusty book, the pages whisper secrets long lost.</p>
-        <p>Will you <strong>proceed</strong> or <strong>step back</strong> to safety?</p>
-      </div>
-      <button id="proceedBtn" class="btn btn-danger btn-lg mt-3">Proceed with Summoning</button>
-      <button id="fleeBtn" class="btn btn-outline-danger btn-lg mt-3">Step Back and Flee</button>
-    `;
+  btnRestart.addEventListener('click', () => {
+    restartGame();
+  });
 
-    document.getElementById('proceedBtn').addEventListener('click', proceedSummoning);
-    document.getElementById('fleeBtn').addEventListener('click', fleeEarly);
-
-    playAmbient();
-    scrollGameToBottom();
-  }
-
-  function fleeEarly(){
-    showOverlay("You chose to flee... but the curse lingers... You can NEVER run from Thal’zorak...", 6000);
-    gameArea.innerHTML = `
-      <h1>Thal’zorak: The 3 AM Demon Escape</h1>
-      <div id="dialogue">
-        <p>You run, but the darkness follows...</p>
-        <p><em>GAME OVER</em></p>
-        <p><button id="restartBtn" class="btn btn-danger btn-lg mt-3">Try Again</button></p>
-      </div>
-    `;
-    document.getElementById('restartBtn').addEventListener('click', () => location.reload());
-  }
-
-  function proceedSummoning(){
-    playClickSound();
-    stage = 'demonAppears';
-    gameArea.innerHTML = `
-      <h1>Thal’zorak: The 3 AM Demon Escape</h1>
-      <div id="dialogue">
-        <p>You chant the unholy words from the ancient tome.</p>
-        <p>The air thickens and the candle flames flicker wildly.</p>
-        <p>A dark shadow forms and coalesces into <strong>${demonName}</strong>.</p>
-      </div>
-      <button id="talkBtn" class="btn btn-warning btn-lg mt-3">Talk to ${demonName}</button>
-      <button id="escapeBtn" class="btn btn-success btn-lg mt-3">Prepare to Escape</button>
-    `;
-
-    document.getElementById('talkBtn').addEventListener('click', talkToDemon);
-    document.getElementById('escapeBtn').addEventListener('click', tryEscape);
-
-    scrollGameToBottom();
-  }
-
-  /* Dialogue sequences */
-  const talkLines = [
-    `${demonName} eyes you with a burning gaze...`,
-    `"Why have you summoned me, ${playerName}?"`,
-    `"Do you possess the strength to undo this pact?"`,
-    `"What secrets do you hide in the dark?"`,
-    `"You dare challenge me?"`,
-    `"Few survive my wrath..."`,
-    `"Your soul feels... fragile."`,
-    `"I will offer you a choice..."`,
-    `"Speak, mortal. Will you bargain or flee?"`
-  ];
-
-  let talkIndex = 0;
-
-  function talkToDemon(){
-    playClickSound();
-    if(stage !== 'demonAppears' && stage !== 'talking') return;
-    stage = 'talking';
-
-    let dialogue = document.getElementById('dialogue');
-    if(!dialogue) return;
-
-    if(talkIndex === 0){
-      dialogue.innerHTML = `<p>${talkLines[0]}</p>`;
-      showOverlay("A cold wind blows...", 3500);
-    } else if(talkIndex < talkLines.length){
-      dialogue.innerHTML += `<p>${talkLines[talkIndex]}</p>`;
+  // Start music once user interacts (required by some browsers - user gesture)
+  window.addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+      startBackgroundMusic();
     }
+  }, {once:true});
 
-    talkIndex++;
+  // Initial game setup
+  spawnWave();
+  updateUI();
+  gameLoop();
 
-    if(talkIndex >= talkLines.length){
-      dialogue.innerHTML += `<p><strong>${demonName} laughs darkly:</strong> "Your fate is sealed... but choices remain."</p>`;
-      dialogue.innerHTML += `
-        <button id="bargainBtn" class="btn btn-warning btn-lg mt-3">Bargain with ${demonName}</button>
-        <button id="fightBtn" class="btn btn-danger btn-lg mt-3">Fight the Demon</button>
-        <button id="runBtn" class="btn btn-success btn-lg mt-3">Run for your Life</button>
-      `;
-      setTimeout(scrollGameToBottom, 200);
-      stage = 'chooseAction';
-      talkIndex = 0;
-
-      document.getElementById('bargainBtn').addEventListener('click', bargainDemon);
-      document.getElementById('fightBtn').addEventListener('click', fightDemon);
-      document.getElementById('runBtn').addEventListener('click', runAway);
-      return;
-    }
-    setTimeout(scrollGameToBottom, 200);
-  }
-
-  function bargainDemon(){
-    playClickSound();
-    stage = 'bargaining';
-    gameArea.querySelector('#dialogue').innerHTML += `<p>You offer a secret to ${demonName}...</p>`;
-
-    showOverlay("Thal’zorak considers your offer...", 4000);
-
-    setTimeout(() => {
-      gameArea.querySelector('#dialogue').innerHTML += `<p><strong>${demonName}:</strong> "Very well, mortal. I will show mercy... for a price."</p>`;
-      presentTools();
-    }, 4500);
-
-    scrollGameToBottom();
-  }
-
-  function fightDemon(){
-    playClickSound();
-    stage = 'fighting';
-    gameArea.querySelector('#dialogue').innerHTML += `<p>You steel your nerves and prepare to fight ${demonName}!</p>`;
-
-    showOverlay("The air thickens with malevolent energy...", 4000);
-
-    setTimeout(() => {
-      gameArea.querySelector('#dialogue').innerHTML += `<p>You must use your sacred tools to banish the demon!</p>`;
-      presentTools();
-    }, 4500);
-
-    scrollGameToBottom();
-  }
-
-  function runAway(){
-    playClickSound();
-    stage = 'running';
-    showOverlay("You try to flee, but darkness follows! Thal’zorak’s scream echoes!", 5000);
-
-    gameArea.querySelector('#dialogue').innerHTML += `<p>You run for your life, but the demon's shadow claws at your heels...</p>`;
-    gameArea.innerHTML += `
-      <p><strong>GAME OVER</strong></p>
-      <button id="restartBtn" class="btn btn-danger btn-lg mt-3">Try Again</button>
-    `;
-    document.getElementById('restartBtn').addEventListener('click', () => location.reload());
-  }
-
-  function presentTools(){
-    stage = 'useTools';
-    const toolsArea = document.createElement('div');
-    toolsArea.id = "toolsArea";
-    gameArea.appendChild(toolsArea);
-
-    toolsArea.innerHTML = `<p>Choose your tools carefully to banish ${demonName}:</p>`;
-
-    tools.forEach(tool => {
-      const btn = document.createElement('button');
-      btn.textContent = tool;
-      btn.className = 'btn btn-outline-light tool-btn';
-      btn.addEventListener('click', () => useTool(tool));
-      toolsArea.appendChild(btn);
-    });
-    scrollGameToBottom();
-  }
-
-  function useTool(tool){
-    if(stage !== 'useTools') return;
-    if(usedTools.has(tool)){
-      gameArea.querySelector('#dialogue').innerHTML += `<p>You have already used the <em>${tool}</em>.</p>`;
-      scrollGameToBottom();
-      return;
-    }
-    usedTools.add(tool);
-
-    playToolUseSound();
-
-    gameArea.querySelector('#dialogue').innerHTML += `<p>You cast the <em>${tool}</em>. It glows with ancient power!</p>`;
-
-    if(usedTools.size === tools.length){
-      stage = 'victory';
-      gameArea.querySelector('#dialogue').innerHTML += `<p><strong>The shrieks of ${demonName} pierce the darkness and fade into silence...</strong></p>`;
-      gameArea.querySelector('#dialogue').innerHTML += `<p><strong>Congratulations, ${playerName}! You have banished ${demonName} and survived the night.</strong></p>`;
-      gameArea.querySelector('#toolsArea').innerHTML = "";
-      gameArea.innerHTML += `<button id="restartBtn" class="btn btn-danger btn-lg mt-4">Play Again</button>`;
-      document.getElementById('restartBtn').addEventListener('click', () => location.reload());
-      scrollGameToBottom();
-    } else {
-      gameArea.querySelector('#dialogue').innerHTML += `<p>More tools are needed to fully banish ${demonName}...</p>`;
-      scrollGameToBottom();
-    }
-  }
-
-  function tryEscape(){
-    playClickSound();
-    if(stage !== 'demonAppears') return;
-    stage = 'preparingEscape';
-
-    gameArea.querySelector('#dialogue').innerHTML += `
-      <p>You ready yourself to escape the clutches of ${demonName}.</p>
-    `;
-    presentTools();
-    scrollGameToBottom();
-  }
-
-  // Automatically focus input on load
-  playerNameInput.focus();
-
+})();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
