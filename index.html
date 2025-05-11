@@ -3,181 +3,473 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>3 AM Demon Escape - Thal’zorak</title>
+  <title>Thal’zorak: The 3 AM Demon Escape</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-    /* Sass compiled styles */
+    @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
     body {
-      background: linear-gradient(to bottom, #120000, #330000);
+      background: radial-gradient(circle at center, #1a0000 0%, #330000 70%, #000 100%);
       color: #f2f2f2;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       min-height: 100vh;
+      padding: 20px;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 20px;
-      text-shadow: 0 0 5px #990000;
-    }
-    h1 {
-      text-shadow: 0 0 10px #ff4444;
-      margin-bottom: 0.5rem;
     }
     #gameArea {
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid #660000;
-      border-radius: 10px;
-      padding: 20px;
-      max-width: 500px;
-      min-height: 250px;
-      box-shadow: 0 0 20px #990000;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #550000;
+      border-radius: 15px;
+      width: 600px;
+      max-width: 95vw;
+      min-height: 500px;
+      padding: 25px;
+      box-shadow: 0 0 35px #b30000;
+      position: relative;
+      overflow-y: auto;
+    }
+    h1 {
+      font-family: 'Creepster', cursive;
+      font-size: 3rem;
+      color: #ff2111;
+      text-shadow: 0 0 10px #ff2111, 0 0 30px #b30000;
+      margin-bottom: 0.7rem;
+      user-select: none;
+    }
+    #dialogue p {
+      font-size: 1.1rem;
+      margin-bottom: 0.7rem;
+      text-shadow: 0 0 6px #bb0000;
     }
     button {
-      margin-top: 15px;
+      margin: 8px 8px 8px 0;
+      box-shadow: 0 0 8px #b30000;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+      font-weight: 600;
     }
-    .tool-btn {
-      margin: 5px 5px 0 0;
+    button:hover {
+      background-color: #770000 !important;
+      box-shadow: 0 0 18px #ff3300;
+    }
+    .btn-outline-danger {
+      border-color: #aa0000;
+      color: #ff4444;
+    }
+    .btn-outline-danger:hover {
+      background-color: #aa0000;
+      color: #fff;
+      box-shadow: 0 0 15px #ff5555;
     }
     input.form-control {
-      max-width: 300px;
-      margin: 0 auto 15px auto;
+      max-width: 350px;
+      margin: 10px auto 20px auto;
       background: #330000;
       border: 1px solid #660000;
       color: #f2f2f2;
       text-shadow: none;
+      font-size: 1.2rem;
+      font-weight: bold;
     }
     input::placeholder {
-      color: #aa4444;
+      color: #bb4444;
+    }
+    #toolsArea button {
+      min-width: 130px;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      color: #ff1111;
+      font-size: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      z-index: 1000;
+      user-select: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #overlay.show {
+      opacity: 1;
+      pointer-events: all;
     }
   </style>
 </head>
-<body class="text-center">
-  <h1>3 AM Demon Escape</h1>
-  <div id="gameArea">
-    <p>Welcome, brave soul. What is your name?</p>
-    <input type="text" id="playerNameInput" class="form-control" placeholder="Enter your name..." autofocus />
-    <button id="startBtn" class="btn btn-danger">Summon Thal’zorak</button>
+<body>
+  <div id="gameArea" aria-live="polite" aria-atomic="true">
+    <h1>Thal’zorak: The 3 AM Demon Escape</h1>
+    <p>Welcome, mortal. What is your name?</p>
+    <input type="text" id="playerNameInput" placeholder="Enter your name here..." autofocus autocomplete="off" />
+    <br />
+    <button id="startBtn" class="btn btn-danger btn-lg">Summon Thal’zorak</button>
   </div>
 
-  <script>
-    // Constants and variables
-    const demonName = "Thal’zorak";
-    const tools = ['Holy Water', 'Magic Salt', 'Ancient Amulet'];
+  <div id="overlay"></div>
 
-    const gameArea = document.getElementById("gameArea");
-    const startBtn = document.getElementById("startBtn");
-    const playerNameInput = document.getElementById("playerNameInput");
+<script>
+  /* Game variables */
+  const demonName = "Thal’zorak";
+  const tools = ['Holy Water', 'Magic Salt', 'Ancient Amulet'];
+  let playerName = "";
+  let stage = 'start';
+  let usedTools = new Set();
 
-    let playerName = "";
-    let hasSummoned = false;
-    let isTalking = false;
-    let isEscaping = false;
-    let usedTools = new Set();
+  const gameArea = document.getElementById('gameArea');
+  const startBtn = document.getElementById('startBtn');
+  const playerNameInput = document.getElementById('playerNameInput');
+  const overlay = document.getElementById('overlay');
 
-    // Start the game when summon button clicked
-    startBtn.addEventListener("click", () => {
-      let inputName = playerNameInput.value.trim();
-      if(!inputName) {
-        alert("Please enter your name, fearless one!");
-        playerNameInput.focus();
-        return;
-      }
-      playerName = inputName;
-      summonDemon();
+  /* Web Audio API Ambient & Effects Setup */
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  let audioCtx, ambientGain, whiteNoiseNode, oscillators = [], ambientPlaying = false;
+
+  function playAmbient() {
+    if (ambientPlaying) return;
+    audioCtx = new AudioContext();
+
+    // Ambient dark drone
+    const oscillator = audioCtx.createOscillator();
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(55, audioCtx.currentTime); // deep base tone
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+    oscillator.start();
+    oscillators.push({ oscillator, gain });
+
+    // Low frequency modulator for eerie pulsing
+    const lfo = audioCtx.createOscillator();
+    lfo.frequency.setValueAtTime(0.2, audioCtx.currentTime);
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.setValueAtTime(10, audioCtx.currentTime);
+    lfo.connect(lfoGain);
+    lfoGain.connect(oscillator.frequency);
+    lfo.start();
+    oscillators.push({ oscillator: lfo, gain: lfoGain });
+
+    // White Noise (hissing creepy background)
+    whiteNoiseNode = audioCtx.createBufferSource();
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    whiteNoiseNode.buffer = buffer;
+    whiteNoiseNode.loop = true;
+
+    const whiteNoiseGain = audioCtx.createGain();
+    whiteNoiseGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    whiteNoiseNode.connect(whiteNoiseGain);
+    whiteNoiseGain.connect(audioCtx.destination);
+    whiteNoiseNode.start();
+
+    ambientGain = whiteNoiseGain;
+
+    ambientPlaying = true;
+  }
+
+  function stopAmbient() {
+    if (!ambientPlaying) return;
+    oscillators.forEach(({oscillator, gain}) => {
+      oscillator.stop();
+      oscillator.disconnect();
+      gain.disconnect();
     });
+    oscillators = [];
+    if(whiteNoiseNode) {
+      whiteNoiseNode.stop();
+      whiteNoiseNode.disconnect();
+    }
+    if(audioCtx) {
+      audioCtx.close();
+    }
+    ambientPlaying = false;
+  }
 
-    function summonDemon(){
-      hasSummoned = true;
-      gameArea.innerHTML = `
-        <p><strong>${playerName}</strong>, the clock strikes 3:00 AM in the haunted night.</p>
-        <p>You open the ancient book and begin the ritual to summon <strong>${demonName}</strong>.</p>
-        <p>The air grows thick... A chilling shadow lurks.</p>
-        <p><strong>${demonName}</strong> has appeared!</p>
-        <p>What will you do? Speak wisely...</p>
-        <button id="talkBtn" class="btn btn-warning">Talk to ${demonName}</button>
-        <button id="tryEscapeBtn" class="btn btn-success">Try to Escape</button>
-        <div id="dialogue" class="mt-3"></div>
-        <div id="toolsArea" class="mt-3"></div>
+  /* SFX for button clicks and effects */
+  function playClickSound(){
+    if(!audioCtx){
+      audioCtx = new AudioContext();
+    }
+    const clickFreq = 500;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(clickFreq, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function playToolUseSound(){
+    if(!audioCtx){
+      audioCtx = new AudioContext();
+    }
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  /* Utility: show overlay with message (creepy) */
+  function showOverlay(text, duration=4000){
+    overlay.textContent = text;
+    overlay.classList.add('show');
+    setTimeout(() => {
+      overlay.classList.remove('show');
+    }, duration);
+  }
+
+  /* Utility: scroll gameArea down smoothly */
+  function scrollGameToBottom(){
+    setTimeout(() => {
+      gameArea.scrollTo({ top: gameArea.scrollHeight, behavior: 'smooth' });
+    }, 100);
+  }
+
+  /* Game logic & flow */
+
+  // Start button handler
+  startBtn.addEventListener('click', () => {
+    if(stage !== 'start') return;
+    let inputName = playerNameInput.value.trim();
+    if(!inputName){
+      alert('Enter your name, mortal!');
+      playerNameInput.focus();
+      return;
+    }
+    playerName = inputName;
+    startGame();
+  });
+
+  // Start the game after name is entered
+  function startGame(){
+    stage = 'summon';
+    gameArea.innerHTML = `
+      <h1>Thal’zorak: The 3 AM Demon Escape</h1>
+      <div id="dialogue">
+        <p>The clock strikes <strong>3:00 AM</strong>. The room chills as <strong>${playerName}</strong> prepares the ancient summoning circle.</p>
+        <p>You open the dusty book, the pages whisper secrets long lost.</p>
+        <p>Will you <strong>proceed</strong> or <strong>step back</strong> to safety?</p>
+      </div>
+      <button id="proceedBtn" class="btn btn-danger btn-lg mt-3">Proceed with Summoning</button>
+      <button id="fleeBtn" class="btn btn-outline-danger btn-lg mt-3">Step Back and Flee</button>
+    `;
+
+    document.getElementById('proceedBtn').addEventListener('click', proceedSummoning);
+    document.getElementById('fleeBtn').addEventListener('click', fleeEarly);
+
+    playAmbient();
+    scrollGameToBottom();
+  }
+
+  function fleeEarly(){
+    showOverlay("You chose to flee... but the curse lingers... You can NEVER run from Thal’zorak...", 6000);
+    gameArea.innerHTML = `
+      <h1>Thal’zorak: The 3 AM Demon Escape</h1>
+      <div id="dialogue">
+        <p>You run, but the darkness follows...</p>
+        <p><em>GAME OVER</em></p>
+        <p><button id="restartBtn" class="btn btn-danger btn-lg mt-3">Try Again</button></p>
+      </div>
+    `;
+    document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+  }
+
+  function proceedSummoning(){
+    playClickSound();
+    stage = 'demonAppears';
+    gameArea.innerHTML = `
+      <h1>Thal’zorak: The 3 AM Demon Escape</h1>
+      <div id="dialogue">
+        <p>You chant the unholy words from the ancient tome.</p>
+        <p>The air thickens and the candle flames flicker wildly.</p>
+        <p>A dark shadow forms and coalesces into <strong>${demonName}</strong>.</p>
+      </div>
+      <button id="talkBtn" class="btn btn-warning btn-lg mt-3">Talk to ${demonName}</button>
+      <button id="escapeBtn" class="btn btn-success btn-lg mt-3">Prepare to Escape</button>
+    `;
+
+    document.getElementById('talkBtn').addEventListener('click', talkToDemon);
+    document.getElementById('escapeBtn').addEventListener('click', tryEscape);
+
+    scrollGameToBottom();
+  }
+
+  /* Dialogue sequences */
+  const talkLines = [
+    `${demonName} eyes you with a burning gaze...`,
+    `"Why have you summoned me, ${playerName}?"`,
+    `"Do you possess the strength to undo this pact?"`,
+    `"What secrets do you hide in the dark?"`,
+    `"You dare challenge me?"`,
+    `"Few survive my wrath..."`,
+    `"Your soul feels... fragile."`,
+    `"I will offer you a choice..."`,
+    `"Speak, mortal. Will you bargain or flee?"`
+  ];
+
+  let talkIndex = 0;
+
+  function talkToDemon(){
+    playClickSound();
+    if(stage !== 'demonAppears' && stage !== 'talking') return;
+    stage = 'talking';
+
+    let dialogue = document.getElementById('dialogue');
+    if(!dialogue) return;
+
+    if(talkIndex === 0){
+      dialogue.innerHTML = `<p>${talkLines[0]}</p>`;
+      showOverlay("A cold wind blows...", 3500);
+    } else if(talkIndex < talkLines.length){
+      dialogue.innerHTML += `<p>${talkLines[talkIndex]}</p>`;
+    }
+
+    talkIndex++;
+
+    if(talkIndex >= talkLines.length){
+      dialogue.innerHTML += `<p><strong>${demonName} laughs darkly:</strong> "Your fate is sealed... but choices remain."</p>`;
+      dialogue.innerHTML += `
+        <button id="bargainBtn" class="btn btn-warning btn-lg mt-3">Bargain with ${demonName}</button>
+        <button id="fightBtn" class="btn btn-danger btn-lg mt-3">Fight the Demon</button>
+        <button id="runBtn" class="btn btn-success btn-lg mt-3">Run for your Life</button>
       `;
+      setTimeout(scrollGameToBottom, 200);
+      stage = 'chooseAction';
+      talkIndex = 0;
 
-      document.getElementById("talkBtn").addEventListener("click", talkToDemon);
-      document.getElementById("tryEscapeBtn").addEventListener("click", tryEscape);
+      document.getElementById('bargainBtn').addEventListener('click', bargainDemon);
+      document.getElementById('fightBtn').addEventListener('click', fightDemon);
+      document.getElementById('runBtn').addEventListener('click', runAway);
+      return;
     }
+    setTimeout(scrollGameToBottom, 200);
+  }
 
-    function talkToDemon(){
-      if(isTalking || isEscaping) return;
-      isTalking = true;
-      const dialogue = document.getElementById("dialogue");
-      dialogue.innerHTML = `<p><em>${demonName} whispers:</em> “Speak, mortal...”</p>`;
+  function bargainDemon(){
+    playClickSound();
+    stage = 'bargaining';
+    gameArea.querySelector('#dialogue').innerHTML += `<p>You offer a secret to ${demonName}...</p>`;
 
-      const questions = [
-        `"Why have you summoned me, ${playerName}?"`,
-        `"Do you possess the strength to undo this pact?"`,
-        `"What do you seek in the darkness?"`,
-      ];
-      let index = 0;
+    showOverlay("Thal’zorak considers your offer...", 4000);
 
-      const questionP = document.createElement("p");
-      questionP.textContent = questions[index];
-      dialogue.appendChild(questionP);
+    setTimeout(() => {
+      gameArea.querySelector('#dialogue').innerHTML += `<p><strong>${demonName}:</strong> "Very well, mortal. I will show mercy... for a price."</p>`;
+      presentTools();
+    }, 4500);
 
-      const nextBtn = document.createElement("button");
-      nextBtn.textContent = "Next Question";
-      nextBtn.className = "btn btn-info btn-sm mt-2";
-      dialogue.appendChild(nextBtn);
+    scrollGameToBottom();
+  }
 
-      nextBtn.addEventListener("click", () => {
-        index++;
-        if(index < questions.length){
-          questionP.textContent = questions[index];
-        } else {
-          dialogue.innerHTML += `<p><strong>${demonName}</strong> laughs darkly: “Your fate has already been cast...”</p>`;
-          isTalking = false;
-        }
-      });
+  function fightDemon(){
+    playClickSound();
+    stage = 'fighting';
+    gameArea.querySelector('#dialogue').innerHTML += `<p>You steel your nerves and prepare to fight ${demonName}!</p>`;
+
+    showOverlay("The air thickens with malevolent energy...", 4000);
+
+    setTimeout(() => {
+      gameArea.querySelector('#dialogue').innerHTML += `<p>You must use your sacred tools to banish the demon!</p>`;
+      presentTools();
+    }, 4500);
+
+    scrollGameToBottom();
+  }
+
+  function runAway(){
+    playClickSound();
+    stage = 'running';
+    showOverlay("You try to flee, but darkness follows! Thal’zorak’s scream echoes!", 5000);
+
+    gameArea.querySelector('#dialogue').innerHTML += `<p>You run for your life, but the demon's shadow claws at your heels...</p>`;
+    gameArea.innerHTML += `
+      <p><strong>GAME OVER</strong></p>
+      <button id="restartBtn" class="btn btn-danger btn-lg mt-3">Try Again</button>
+    `;
+    document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+  }
+
+  function presentTools(){
+    stage = 'useTools';
+    const toolsArea = document.createElement('div');
+    toolsArea.id = "toolsArea";
+    gameArea.appendChild(toolsArea);
+
+    toolsArea.innerHTML = `<p>Choose your tools carefully to banish ${demonName}:</p>`;
+
+    tools.forEach(tool => {
+      const btn = document.createElement('button');
+      btn.textContent = tool;
+      btn.className = 'btn btn-outline-light tool-btn';
+      btn.addEventListener('click', () => useTool(tool));
+      toolsArea.appendChild(btn);
+    });
+    scrollGameToBottom();
+  }
+
+  function useTool(tool){
+    if(stage !== 'useTools') return;
+    if(usedTools.has(tool)){
+      gameArea.querySelector('#dialogue').innerHTML += `<p>You have already used the <em>${tool}</em>.</p>`;
+      scrollGameToBottom();
+      return;
     }
+    usedTools.add(tool);
 
-    function tryEscape(){
-      if(isEscaping || isTalking) return;
-      isEscaping = true;
-      usedTools.clear();
+    playToolUseSound();
 
-      const dialogue = document.getElementById("dialogue");
-      dialogue.innerHTML = `<p>You gather your courage and prepare to escape using your tools.</p>`;
+    gameArea.querySelector('#dialogue').innerHTML += `<p>You cast the <em>${tool}</em>. It glows with ancient power!</p>`;
 
-      const toolsArea = document.getElementById("toolsArea");
-      toolsArea.innerHTML = "";
-      tools.forEach(tool => {
-        const btn = document.createElement("button");
-        btn.textContent = tool;
-        btn.className = "btn btn-outline-light tool-btn";
-        btn.addEventListener("click", () => useTool(tool));
-        toolsArea.appendChild(btn);
-      });
+    if(usedTools.size === tools.length){
+      stage = 'victory';
+      gameArea.querySelector('#dialogue').innerHTML += `<p><strong>The shrieks of ${demonName} pierce the darkness and fade into silence...</strong></p>`;
+      gameArea.querySelector('#dialogue').innerHTML += `<p><strong>Congratulations, ${playerName}! You have banished ${demonName} and survived the night.</strong></p>`;
+      gameArea.querySelector('#toolsArea').innerHTML = "";
+      gameArea.innerHTML += `<button id="restartBtn" class="btn btn-danger btn-lg mt-4">Play Again</button>`;
+      document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+      scrollGameToBottom();
+    } else {
+      gameArea.querySelector('#dialogue').innerHTML += `<p>More tools are needed to fully banish ${demonName}...</p>`;
+      scrollGameToBottom();
     }
+  }
 
-    function useTool(tool){
-      if(usedTools.has(tool)){
-        const dialogue = document.getElementById("dialogue");
-        dialogue.innerHTML += `<p>You have already used the <em>${tool}</em>.</p>`;
-        return;
-      }
-      usedTools.add(tool);
+  function tryEscape(){
+    playClickSound();
+    if(stage !== 'demonAppears') return;
+    stage = 'preparingEscape';
 
-      const dialogue = document.getElementById("dialogue");
-      dialogue.innerHTML += `<p>You use the <em>${tool}</em>! It glows with ancient power.</p>`;
+    gameArea.querySelector('#dialogue').innerHTML += `
+      <p>You ready yourself to escape the clutches of ${demonName}.</p>
+    `;
+    presentTools();
+    scrollGameToBottom();
+  }
 
-      if(usedTools.size === tools.length){
-        dialogue.innerHTML += `<p><strong>The demonic shrieks of ${demonName} fill the air, then fade...</strong></p>`;
-        dialogue.innerHTML += `<p>You escaped the night unscathed, ${playerName}. Your bravery is your shield.</p>`;
-        document.getElementById("toolsArea").innerHTML = "";
-        isEscaping = false;
-      } else {
-        dialogue.innerHTML += `<p><strong>More tools needed to banish ${demonName}!</strong></p>`;
-      }
-    }
+  // Automatically focus input on load
+  playerNameInput.focus();
 
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
